@@ -40,7 +40,7 @@ class Player(Paddle):
 class Opponent(Paddle):
     def __init__(self, groups, ball):
         super().__init__(groups)
-        self.speed = SPEED['opponent']
+        self.speed = SPEED['opponent']  
         self.rect.center = POS['opponent']
         self.ball = ball
 
@@ -48,25 +48,27 @@ class Opponent(Paddle):
         self.direction = 1 if self.ball.rect.centery > self.rect.centery else - 1
 
 class Ball(pygame.sprite.Sprite):
-    def __init__(self, groups, paddle_sprites, update_score):
+    def __init__(self, groups, paddle_sprites, update_score, hit_sound, score_sound):
         super().__init__(groups)
         self.paddle_sprites = paddle_sprites
         self.update_score = update_score
+        self.hit_sound = hit_sound
+        self.score_sound = score_sound
 
         # image 
         self.image = pygame.Surface(SIZE['ball'], pygame.SRCALPHA)
-        pygame.draw.circle(self.image, COLORS['ball'], (SIZE['ball'][0] / 2,SIZE['ball'][1] / 2), SIZE['ball'][0] / 2)
+        pygame.draw.circle(self.image, COLORS['ball'], (SIZE['ball'][0] / 2, SIZE['ball'][1] / 2), SIZE['ball'][0] / 2)
 
         # shadow surf
         self.shadow_surf = self.image.copy()
-        pygame.draw.circle(self.shadow_surf, COLORS['ball shadow'], (SIZE['ball'][0] / 2,SIZE['ball'][1] / 2), SIZE['ball'][0] / 2)
+        pygame.draw.circle(self.shadow_surf, COLORS['ball shadow'], (SIZE['ball'][0] / 2, SIZE['ball'][1] / 2), SIZE['ball'][0] / 2)
 
         # rect & movement
-        self.rect = self.image.get_frect(center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
+        self.rect = self.image.get_frect(center=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
         self.old_rect = self.rect.copy()
-        self.direction = pygame.Vector2(choice((1,-1)),uniform(0.7, 0.8) * choice((-1,1)))
+        self.direction = pygame.Vector2(choice((1, -1)), uniform(0.7, 0.8) * choice((-1, 1)))
         self.speed_modifier = 0
-    
+
         # timer 
         self.start_time = pygame.time.get_ticks()
         self.duration = 1200
@@ -76,7 +78,7 @@ class Ball(pygame.sprite.Sprite):
         self.collision('horizontal')
         self.rect.y += self.direction.y * SPEED['ball'] * dt * self.speed_modifier
         self.collision('vertical')
-    
+
     def collision(self, direction):
         for sprite in self.paddle_sprites:
             if sprite.rect.colliderect(self.rect):
@@ -84,33 +86,38 @@ class Ball(pygame.sprite.Sprite):
                     if self.rect.right >= sprite.rect.left and self.old_rect.right <= sprite.old_rect.left:
                         self.rect.right = sprite.rect.left
                         self.direction.x *= -1
+                        self.hit_sound.play()
                     if self.rect.left <= sprite.rect.right and self.old_rect.left >= sprite.old_rect.right:
                         self.rect.left = sprite.rect.right
                         self.direction.x *= -1
+                        self.hit_sound.play()
                 else:
                     if self.rect.bottom >= sprite.rect.top and self.old_rect.bottom <= sprite.old_rect.top:
                         self.rect.bottom = sprite.rect.top
                         self.direction.y *= -1
+                        self.hit_sound.play()
                     if self.rect.top <= sprite.rect.bottom and self.old_rect.top >= sprite.old_rect.bottom:
                         self.rect.top = sprite.rect.bottom
                         self.direction.y *= -1
+                        self.hit_sound.play()
 
     def wall_collision(self):
         if self.rect.top <= 0:
             self.rect.top = 0
             self.direction.y *= -1
-        
+
         if self.rect.bottom >= WINDOW_HEIGHT:
             self.rect.bottom = WINDOW_HEIGHT
             self.direction.y *= -1
-        
+
         if self.rect.right >= WINDOW_WIDTH or self.rect.left <= 0:
+            self.score_sound.play()
             self.update_score('player' if self.rect.x < WINDOW_WIDTH / 2 else 'opponent')
             self.reset()
-    
+
     def reset(self):
         self.rect.center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
-        self.direction = pygame.Vector2(choice((1,-1)),uniform(0.7, 0.8) * choice((-1,1)))
+        self.direction = pygame.Vector2(choice((1, -1)), uniform(0.7, 0.8) * choice((-1, 1)))
         self.start_time = pygame.time.get_ticks()
 
     def timer(self):

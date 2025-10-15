@@ -13,12 +13,31 @@ class Game:
         pygame.display.set_caption('Pong')
         self.clock = pygame.time.Clock()
         self.running = True
-    
+
+        # sound
+        pygame.mixer.music.load(join('audio', '2021-10-19_-_Funny_Bit_-_www.FesliyanStudios.com.mp3')) 
+        pygame.mixer.music.set_volume(0.5)                    
+        pygame.mixer.music.play(-1)                                
+
+        self.hit_sound = pygame.mixer.Sound(join('audio', '8-bit-explosion-10-340462.mp3'))
+        self.hit_sound.set_volume(0.5)
+
+        self.score_sound = pygame.mixer.Sound(join('audio', 'experimental-8-bit-sound-270302.mp3'))
+        self.score_sound.set_volume(0.5)
+
         # sprites 
         self.all_sprites = AllSprites()
         self.paddle_sprites = pygame.sprite.Group()
         self.player = Player((self.all_sprites, self.paddle_sprites))
-        self.ball = Ball(self.all_sprites, self.paddle_sprites, self.update_score)
+
+        self.ball = Ball(
+            self.all_sprites,
+            self.paddle_sprites,
+            self.update_score,
+            self.hit_sound,
+            self.score_sound
+        )
+
         Opponent((self.all_sprites, self.paddle_sprites), self.ball)
 
         # score
@@ -60,7 +79,6 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                    # Save score on quit
                     with open(self.score_path, 'w') as score_file:
                         json.dump(self.score, score_file)
             
